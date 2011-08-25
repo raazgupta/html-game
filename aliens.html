@@ -2,32 +2,28 @@
 <html>
     <head>
         <meta charset="utf-8">
-        <link href="style.css" rel="stylesheet" type="text/css" />
-        <meta name="viewport" content="width=device-width,initial-scale=1.0, user-scalable=no" /> 
         <title>Bad Aliens</title>
         <script type="text/javascript">
         
-            var earthSize = 67;
-        
-            window.onload = initialize;
-            
-            function initialize(){
+            var canvas = document.getElementById("surface");
+            var ctx = canvas.getContext("2d");
+
                 var ASSET_MANAGER = new AssetManager();
                 ASSET_MANAGER.queueDownload('img/earth.png');
                 ASSET_MANAGER.downloadAll(function(){
                     var x = 0, y = 0;
                     var sprite = ASSET_MANAGER.getAsset('img/earth.png');
                     
-                    var canvas = document.getElementById("surface");
-                    var ctx = canvas.getContext("2d");
+                    
+                    
                     //move coordinate system to the center of canvas
                     ctx.translate(canvas.width/2, canvas.height/2);
                     
                     // draw image centered
-                    ctx.drawImage(sprite, x - earthSize/2, y - earthSize/2, earthSize, earthSize);
+                    ctx.drawImage(sprite, x - sprite.width/2, y - sprite.height/2);
                     
                 });
-            }
+            
             
             
             
@@ -67,11 +63,74 @@
                     this.cache[path] = img;
                 }
             }
+			
+			function GameEngine(){
+				this.entities = [];
+				this.ctx = null;
+				this.lastUpdateTimestamp = null;
+				this.deltaTime = null;
+			}
+			
+			GameEngine.prototype.draw = function(callback){
+			}
+			
+			GameEngine.prototype.update = function(){
+			}
+			
+			GameEngine.prototype.loop = function(){
+				var now = Date.now();
+				this.deltaTime = now - this.lastUpdateTimestamp;
+				this.update();
+				this.draw();
+				this.lastUpdateTimestamp = now;
+			}
+			
+			GameEngine.prototype.start = function(){
+				console.log("starting game");
+				this.lastUpdateTimestamp = Date.now();
+				var that = this;
+				(function gameLoop() {
+					that.loop();
+					requestAnimFrame(gameLoop, that.ctx.canvas);
+				})();
+			}
+			
+			window.requestAnimFrame = (function(){
+				return  window.requestAnimationFrame       ||
+				window.webkitRequestAnimationFrame ||
+				window.mozRequestAnimationFrame    ||
+				window.oRequestAnimationFrame      ||
+				window.msRequestAnimationFrame     ||
+				function(/* function */ callback, /* DOMElement */ element){
+				  window.setTimeout(callback, 1000 / 60);
+				};
+			})();
+			
+			Alien.prototype.update = function(){
+				this.x = this.radial_distance * Math.cos(this.angle);
+				this.y = this.radial_distance * Math.sin(this.angle);
+				this.radial_distance -= this.speed * this.game.deltaTime;
+				
+				Entity.prototype.update.call(this);
+			}
+			
+			Alien.prototype.draw = function(ctx) {
+				this.drawSpriteCentered(ctx);
+				Entity.prototype.draw.call(this, ctx);
+			}
+			
+			Entity.prototype.drawSpriteCentered = function(ctx){
+				var x = this.x - this.sprite.width/2;
+				var y = this.y - this.sprite.height/2;
+				ctx.drawImage(this.sprite, x, y);
+			}
+			
+			
             
         </script>
     </head>
     <body>
-        <canvas id="surface">
+        <canvas id="surface" width="1024" height="768" style="background: black;">
         </canvas>
     </body>
 </html>
